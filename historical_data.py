@@ -20,7 +20,7 @@ def parse_mixed_time(val):
             mins, secs = map(int, val.split(":"))
             return pd.to_timedelta(pd.Timedelta(minutes=mins, seconds=secs))
 
-        # SS
+        # :SS
         if re.match(r"^\d+$", val):
             return pd.to_timedelta(seconds=int(val))
 
@@ -49,16 +49,21 @@ def history():
     df = df.drop(index=0) # Sold aircraft
     df.rename(columns={"registration number": "reg"}, inplace=True)
 
-    # print(df.dtypes) # For debugging
     # Correcting Datatypes
     df["total tail down time"] = pd.to_timedelta(df["total tail down time"])
     df["avg tail down time"] = pd.to_timedelta(df["avg tail down time"])
     df["upped"] = pd.to_datetime(df["upped"])
     df["downed"] = pd.to_datetime(df["downed"])
-    df["duration"] = df["duration"].apply(parse_mixed_time)
+    df["reported duration"] = df["duration"].apply(parse_mixed_time)
+    df["duration"] = df["upped"] - df["downed"]
 
+    def complete_duration ():
+        nans = df[df["duration"].isna()].index  # index of all NaN values [57, 132, 266, 441, 727, 861, 900]
+        for i in nans:
+            df.at[i, "duration"] = df.at[i, "reported duration"]  # Filling NaN from "reported duration"
+        return df["duration"]
 
-    # print(df.dtypes) # For debugging
+    df["duration"] = complete_duration()
 
     return df
 
@@ -75,11 +80,3 @@ def total_down_time():
     total_down_time = pd.to_timedelta(total_down_time)
 
     return total_down_time
-
-history()
-
-reason_df = pd.read_csv("Resources Downed by Reason.csv")
-# print(reason_df.columns)
-# print(reason_df.info())
-
-
