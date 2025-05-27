@@ -80,3 +80,5 @@ def total_down_time():
     total_down_time = pd.to_timedelta(total_down_time)
 
     return total_down_time
+
+history()

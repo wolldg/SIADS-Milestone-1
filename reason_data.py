@@ -52,13 +52,26 @@ def downed():
     downed_df["reason"] = downed_df["reason"].apply(map_reason)
     downed_df = downed_df.drop(["downed reason", "eta squawk"], axis=1)  # Don't need these anymore
     #------------------------------------------------------------------------------------------------------------------#
+    from historical_data import parse_mixed_time
+
 
     downed_df["downed"] = pd.to_datetime(downed_df['downed'])
     downed_df["upped"] = pd.to_datetime(downed_df['upped'])
+    downed_df['duration'] = downed_df['duration'].astype(str).str.replace(",", "", regex=False)  # Removing commas
+    downed_df["reported duration"] = [pd.Timedelta(hours=h) for h in downed_df["duration"].astype(float)]
 
-    downed_df["duration"] = downed_df["upped"] - downed_df["downed"]  # The duration column was messy and inaccurate
+    # This column is the more precisely calculated duration
+    downed_df["duration"] = downed_df["upped"] - downed_df["downed"]
 
     # print(downed_df["duration"].iloc[58]) # There are some rows where the upped time is missing
+    def complete_duration ():
+        nans = downed_df[downed_df["duration"].isna()].index  # index of NaN values [57, 132, 266, 441, 727, 861, 900]
+        for i in nans:
+            downed_df.at[i, "duration"] = downed_df.at[i, "reported duration"]  # Filling NaN from "reported duration"
+            downed_df["downed"] = pd.to_datetime(downed_df['downed'])
+        return downed_df["duration"]
+
+    downed_df["duration"] = complete_duration()
 
     return (downed_df)
 
