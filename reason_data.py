@@ -1,7 +1,5 @@
 import pandas as pd
-import datetime
-import re
-import numpy as np
+
 
 df = pd.read_csv("Resources Downed by Reason.csv")
 df = df.drop(df.index[0]) # Sold aircraft
@@ -75,5 +73,3 @@ def downed():
 
     return (downed_df)
 
-test = downed()
-#print(test.columns)
