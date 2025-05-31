@@ -14,7 +14,7 @@ df = df[df["REPORT_TYPE"] != "SOD  "]  # These are at 23:59 when there is no fly
 df = df[df["REPORT_TYPE"] != "SOM  "]  # Same as "SOD" but at the end of the month.
 
 
-def Source_A():
+def df_A():
     df["DATE"] = pd.to_datetime(df["DATE"])
     labels = ["HourlyAltimeterSetting", "HourlyDewPointTemperature", "HourlyDryBulbTemperature",
               "HourlyPrecipitation", "HourlyPresentWeatherType", "HourlyRelativeHumidity", "HourlySkyConditions",
@@ -22,9 +22,6 @@ def Source_A():
     df.index = df["DATE"]
 
     return df[labels]
-
-df_A = Source_A()
-print(df_A.head())
 
 # There is an additional timestamp on the METAR reports that needs to be removed.
 def extract_metar_text(line):
@@ -89,8 +86,5 @@ def df_B():
     df_B.index = df["DATE"]
 
     return df_B
-
-df_B()
-
 
 
