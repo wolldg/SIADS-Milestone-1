@@ -87,4 +87,70 @@ def df_B():
 
     return df_B
 
+# Take the result of df_A(), change all values to floats and fill NaNs.
+def NOAA_to_float_and_interpolate():
+    df = df_A()
+    #Drop HourlySkyConditions and HourlyPresentWeatherType to simplify the data
+    df = df.drop(columns=["HourlySkyConditions", "HourlyPresentWeatherType"], errors='ignore')
 
+    # Convert all columns except index to numeric, keep NaNs for now.
+    df = df.apply(pd.to_numeric, errors='coerce').astype(float)
+
+    df = df.reset_index()
+    df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')
+
+    # Interpolate numeric columns so the NaNs are filled with the 'average' value instead of zero
+    # Use select_dtypes method to to include only the columns that contain numbers.
+    numeric_cols = df.select_dtypes(include='number').columns
+    df[numeric_cols] = df[numeric_cols].interpolate(method='linear', limit_direction='both')
+
+    return df
+
+
+def change_NOAA_columns(df):
+    pref_columns = ['DATE',
+                    'altimeter', 
+                    'dew_point',
+                    'temperature',
+                    'precipitation',
+                    'humidity',
+                    'visibility',
+                    'wind_dir',
+                    'gust_speed',
+                    'wind_speed']
+    
+    df.columns = pref_columns
+    return df   
+
+# For every numerical column in NOAA_df, add a new column that contains the average for the 5 days prior to a downed event
+def add_avg_prev_columns(df, columns, prev_days=5):
+    df = df.copy()
+    df['DATE'] = pd.to_datetime(df['DATE'])
+    df = df.sort_values('DATE')
+
+    for col in columns:
+        avg_col_name = f'avg_{col}_prev_{prev_days}d'
+        avg_values = []
+
+        for _, row in df.iterrows():
+            current_date = row['DATE']
+            # Use Timedelta method to create a window of dates before the current_date.
+            # Set the start date to be the number of prev_days prior to the current date, but if there are less than prev_days prior, get as many as 
+            # available.
+            start_date = current_date - pd.Timedelta(days=prev_days - 1)
+
+            # create a mask for the date window
+            mask = (df['DATE'] >= start_date) & (df['DATE'] <= current_date)
+           
+            prior_values = df.loc[mask, col]
+            avg_values.append(prior_values.mean())
+        df[avg_col_name] = avg_values
+    return df
+
+# When it is time to merge and analyze, just call this function.
+def get_cleaned_NOAA_df(prev_days=5):
+    df = NOAA_to_float_and_interpolate()
+    df = change_NOAA_columns(df)
+    numeric_cols = df.select_dtypes(include='number').columns.tolist()
+    df = add_avg_prev_columns(df, columns=numeric_cols, prev_days=prev_days)
+    return df
