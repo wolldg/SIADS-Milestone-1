@@ -100,7 +100,7 @@ def NOAA_to_float_and_interpolate():
     df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')
 
     # Interpolate numeric columns so the NaNs are filled with the 'average' value instead of zero
-    # Use select_dtypes method to to include only the columns that contain numbers.
+    # Use select_dtypes method to include only the columns that contain numbers.
     numeric_cols = df.select_dtypes(include='number').columns
     df[numeric_cols] = df[numeric_cols].interpolate(method='linear', limit_direction='both')
 
