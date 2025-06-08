@@ -126,25 +126,13 @@ def change_NOAA_columns(df):
 def add_avg_prev_columns(df, columns, prev_days=5):
     df = df.copy()
     df['DATE'] = pd.to_datetime(df['DATE'])
-    df = df.sort_values('DATE')
-
+    df = df.sort_values('DATE').set_index('DATE')
+    
+    # Use rolling method to get the average value for the number of prev_days before the current_date.
     for col in columns:
-        avg_col_name = f'avg_{col}_prev_{prev_days}d'
-        avg_values = []
-
-        for _, row in df.iterrows():
-            current_date = row['DATE']
-            # Use Timedelta method to create a window of dates before the current_date.
-            # Set the start date to be the number of prev_days prior to the current date, but if there are less than prev_days prior, get as many as 
-            # available.
-            start_date = current_date - pd.Timedelta(days=prev_days - 1)
-
-            # create a mask for the date window
-            mask = (df['DATE'] >= start_date) & (df['DATE'] <= current_date)
-           
-            prior_values = df.loc[mask, col]
-            avg_values.append(prior_values.mean())
-        df[avg_col_name] = avg_values
+        df[f'avg_{col}_prev_{prev_days}d'] = df[col].rolling(f'{prev_days}D').mean()
+        
+    df = df.reset_index()
     return df
 
 # When it is time to merge and analyze, just call this function.
