@@ -51,20 +51,25 @@ def history_cats():
 history_cats()
 
 #########################################################################################
-# We need to clean this all up, but I wanteed to get it in here so you can check it out.#
+# We need to clean this all up, but I wanted to get it in here so you can check it out.#
 #########################################################################################
 
 downed_df = downed_df.sort_values('downed')
 NOAA_df = NOAA_df.sort_values('DATE')
 
-# Merge: assign each downed event the most recent NOAA data before that event
-merged_df = pd.merge_asof(
-    downed_df,
-    NOAA_df,
-    left_on='downed',
-    right_on='DATE',
-    direction='backward'
-)
+def merge_downed_and_NOAA():
+    # Merge and assign each downed event the most recent NOAA data before that event
+    # merge_asof is like a left-join but matches on the nearest key rather than the equal keys. 
+    merged_df = pd.merge_asof(
+        downed_df,
+        NOAA_df,
+        left_on='downed',
+        right_on='DATE',
+        direction='backward'
+    )
+    return merged_df
+merged_df = merge_downed_and_NOAA()
+
 
 # There are some rows in merged_df that contain NaNs.
 nan_rows = merged_df[merged_df['avg_temperature_prev_5d'].isna()]
@@ -77,18 +82,16 @@ merged_df = merged_df.drop(nan_rows.index)
 final_merged_df = merged_df.loc[merged_df['reason'].isin(['50 Hr Inspect', '100 Hr Inspect', 'Annual Inspect','Unspecified']) == False]
 
 # Here's the SPLOM.  
-def weather_splom():
+important_cols = [
+    'avg_temperature_prev_5d',
+    'avg_precipitation_prev_5d',
+    'avg_humidity_prev_5d',
+    'avg_wind_speed_prev_5d',
+    'avg_visibility_prev_5d',
+]
 
-    important_cols = [
-        'avg_temperature_prev_5d',
-        'avg_precipitation_prev_5d',
-        'avg_humidity_prev_5d',
-        'avg_wind_speed_prev_5d',
-        'avg_visibility_prev_5d',
-    ]
-
+def weather_splom(columns):
     sub_df = final_merged_df[important_cols + ['reason']].dropna()
-
     sns.pairplot(
         sub_df,
         vars=important_cols,
@@ -100,8 +103,7 @@ def weather_splom():
     plt.suptitle("SPLOM of NOAA Rolling Averages by Downed Reason", y=1.02)
     plt.tight_layout()
     plt.show()
-
-# plot_weather_splom()
+#weather_splom(important_cols)
 
 
 # KDE plot template for weather data in final_merged_df
@@ -185,5 +187,29 @@ def stacked_downed_counts_by_aircraft_and_reason():
 
 # stacked_downed_counts_by_aircraft_and_reason()
 
+
+# Average Downtime Duration per Reason
+def horizontal_bar_seaborn(df):
+    avg_duration = df.groupby('reason')['duration'].mean().reset_index()
+    avg_duration['duration_hours'] = avg_duration['duration'].dt.total_seconds() / 3600
+    
+    plot_data = avg_duration.reset_index()
+    plot_data = plot_data.sort_values('duration_hours', ascending=True)
+
+    plt.figure(figsize=(12, 6))
+    barplot = sns.barplot(
+        data=plot_data,
+        y='reason',
+        x='duration_hours',
+        palette='tab10'
+    )    
+    for i in barplot.containers:
+        barplot.bar_label(i, fmt='%.1f', label_type='edge', padding=3)
+    plt.title('Average Downtime Duration by Reason', fontsize=14)
+    plt.xlabel('Average Duration')
+    plt.ylabel('Reason')
+    plt.tight_layout()
+    return plt.show()
+#horizontal_bar_seaborn(downed_df)
 
 
