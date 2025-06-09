@@ -132,6 +132,58 @@ def plot_kde_by_reason(x):
 reason_counts = merged_df['reason'].value_counts()
 # print(reason_counts)
 
+aircraft = merged_df['resource'].value_counts()
+print("No. aircraft: ", len(aircraft))
+print(aircraft)
+
+
+# Chart showing how many times each aircraft was downed and for what reason.
+def downed_counts_by_aircraft_and_reason():
+    count_df = final_merged_df.groupby(['resource', 'reason']).size().reset_index(name='count')
+    total_counts = count_df.groupby('resource')['count'].sum().sort_values(ascending=False)
+    count_df['resource'] = pd.Categorical(count_df['resource'], categories=total_counts.index, ordered=True)
+
+    plt.figure(figsize=(10, 8))
+    ax = sns.barplot(
+        data=count_df,
+        y='resource',
+        x='count',
+        hue='reason',
+        palette='tab10'
+    )
+
+    plt.title("Downed Events per Aircraft by Reason")
+    plt.xlabel("Event Count")
+    plt.ylabel("Aircraft (Resource)")
+    plt.legend(title='Reason', bbox_to_anchor=(1.01, 1), loc='upper left')
+    plt.tight_layout()
+    plt.show()
+
+# downed_counts_by_aircraft_and_reason()
+
+# Another plot of the same data, but this one is stacked so it is easier to read.
+def stacked_downed_counts_by_aircraft_and_reason():
+    count_df = final_merged_df.groupby(['resource', 'reason']).size().unstack(fill_value=0)
+    count_df = count_df.loc[count_df.sum(axis=1).sort_values(ascending=False).index]
+
+    plt.figure(figsize=(10, 8))
+    left = pd.Series([0] * len(count_df), index=count_df.index)
+    colors = plt.cm.tab10.colors  
+    for i, reason in enumerate(count_df.columns):
+        counts = count_df[reason]
+        bars = plt.barh(count_df.index, counts, left=left, label=reason, color=colors[i % len(colors)])
+        left += counts
+
+    plt.xlabel("Total Downed Events")
+    plt.ylabel("Aircraft (Resource)")
+    plt.margins(y=0.02)
+    plt.title("Stacked Downed Events per Aircraft by Reason")
+    plt.legend(title='Reason', bbox_to_anchor=(1.01, 1), loc='upper left')
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=['0', '5', '10', '15', '20'])
+    plt.tight_layout()
+    plt.show()
+
+# stacked_downed_counts_by_aircraft_and_reason()
 
 
 
