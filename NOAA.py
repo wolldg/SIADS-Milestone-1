@@ -107,19 +107,20 @@ def NOAA_to_float_and_interpolate():
     return df
 
 
+# Rename the columns to make it a little easier for plotting and analysis.
 def change_NOAA_columns(df):
-    pref_columns = ['DATE',
-                    'altimeter', 
-                    'dew_point',
-                    'temperature',
-                    'precipitation',
-                    'humidity',
-                    'visibility',
-                    'wind_dir',
-                    'gust_speed',
-                    'wind_speed']
+    df = df.rename(columns={
+        'HourlyAltimeterSetting':'altimeter',
+         'HourlyDewPointTemperature':'dew_point',
+         'HourlyDryBulbTemperature':'temperature',
+         'HourlyPrecipitation':'precipitation',
+         'HourlyRelativeHumidity':'humidity',
+         'HourlyVisibility':'visibility',
+         'HourlyWindDirection':'wind_dir',
+         'HourlyWindGustSpeed':'gust_speed',
+         'HourlyWindSpeed':'wind_speed',
+    })
     
-    df.columns = pref_columns
     return df   
 
 # For every numerical column in NOAA_df, add a new column that contains the average for the 5 days prior to a downed event
