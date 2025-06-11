@@ -40,7 +40,7 @@ def reason_cats():
     print(downed_df.reason.unique())
     print("_" * 65)
 
-reason_cats()
+# reason_cats()
 
 def history_cats():
     print(history_df["downed reason"].unique(), "\n")
@@ -48,7 +48,7 @@ def history_cats():
     print(history_df["comments"].unique(), "\n")
     print("_" * 65)
 
-history_cats()
+# history_cats()
 
 #########################################################################################
 # We need to clean this all up, but I wanted to get it in here so you can check it out.#
@@ -73,7 +73,7 @@ merged_df = merge_downed_and_NOAA()
 
 # There are some rows in merged_df that contain NaNs.
 nan_rows = merged_df[merged_df['avg_temperature_prev_5d'].isna()]
-print(nan_rows['downed'])
+# print(nan_rows['downed'])
 
 merged_df = merged_df.drop(nan_rows.index)
 
@@ -103,7 +103,7 @@ def weather_splom(columns):
     plt.suptitle("SPLOM of NOAA Rolling Averages by Downed Reason", y=1.02)
     plt.tight_layout()
     plt.show()
-#weather_splom(important_cols)
+weather_splom(important_cols)
 
 
 # KDE plot template for weather data in final_merged_df
@@ -135,8 +135,8 @@ reason_counts = merged_df['reason'].value_counts()
 # print(reason_counts)
 
 aircraft = merged_df['resource'].value_counts()
-print("No. aircraft: ", len(aircraft))
-print(aircraft)
+#print("No. aircraft: ", len(aircraft))
+#print(aircraft)
 
 
 # Chart showing how many times each aircraft was downed and for what reason.
@@ -210,6 +210,6 @@ def horizontal_bar_seaborn(df):
     plt.ylabel('Reason')
     plt.tight_layout()
     return plt.show()
-#horizontal_bar_seaborn(downed_df)
+# horizontal_bar_seaborn(downed_df)
 
 

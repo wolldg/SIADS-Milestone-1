@@ -6,7 +6,6 @@ dtype_spec = {16: str, 26: str, 27: str, 32: str,
               37: str, 41: str, 42: str, 43: str,
               45: str, 82: str, 85: str, 87: str}
 
-
 df = pd.read_csv("NOAA_LCD_BattleCreek_2024.csv", dtype=dtype_spec)
 
 # Rows below have additional data that are making cleaning more cumbersome.
@@ -23,12 +22,14 @@ def df_A():
 
     return df[labels]
 
+
 # There is an additional timestamp on the METAR reports that needs to be removed.
 def extract_metar_text(line):
     return re.sub(r'^MET\w+\s\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} ', '', str(line))
 
 
 df["REM"] = df["REM"].apply(extract_metar_text)
+
 
 # The metar needs to be decoded separately
 # The metar is a single string that encodes multiple datapoints.
@@ -77,6 +78,7 @@ def decode_metar(metar):
 
     return result
 
+
 # The decoded metar is parsed into a df
 def df_B():
     decoded = df["REM"].apply(decode_metar)
@@ -87,10 +89,11 @@ def df_B():
 
     return df_B
 
+
 # Take the result of df_A(), change all values to floats and fill NaNs.
 def NOAA_to_float_and_interpolate():
     df = df_A()
-    #Drop HourlySkyConditions and HourlyPresentWeatherType to simplify the data
+    # Drop HourlySkyConditions and HourlyPresentWeatherType to simplify the data
     df = df.drop(columns=["HourlySkyConditions", "HourlyPresentWeatherType"], errors='ignore')
 
     # Convert all columns except index to numeric, keep NaNs for now.
@@ -110,31 +113,33 @@ def NOAA_to_float_and_interpolate():
 # Rename the columns to make it a little easier for plotting and analysis.
 def change_NOAA_columns(df):
     df = df.rename(columns={
-        'HourlyAltimeterSetting':'altimeter',
-         'HourlyDewPointTemperature':'dew_point',
-         'HourlyDryBulbTemperature':'temperature',
-         'HourlyPrecipitation':'precipitation',
-         'HourlyRelativeHumidity':'humidity',
-         'HourlyVisibility':'visibility',
-         'HourlyWindDirection':'wind_dir',
-         'HourlyWindGustSpeed':'gust_speed',
-         'HourlyWindSpeed':'wind_speed',
+        'HourlyAltimeterSetting': 'altimeter',
+        'HourlyDewPointTemperature': 'dew_point',
+        'HourlyDryBulbTemperature': 'temperature',
+        'HourlyPrecipitation': 'precipitation',
+        'HourlyRelativeHumidity': 'humidity',
+        'HourlyVisibility': 'visibility',
+        'HourlyWindDirection': 'wind_dir',
+        'HourlyWindGustSpeed': 'gust_speed',
+        'HourlyWindSpeed': 'wind_speed',
     })
-    
-    return df   
+
+    return df
+
 
 # For every numerical column in NOAA_df, add a new column that contains the average for the 5 days prior to a downed event
 def add_avg_prev_columns(df, columns, prev_days=5):
     df = df.copy()
     df['DATE'] = pd.to_datetime(df['DATE'])
     df = df.sort_values('DATE').set_index('DATE')
-    
+
     # Use rolling method to get the average value for the number of prev_days before the current_date.
     for col in columns:
         df[f'avg_{col}_prev_{prev_days}d'] = df[col].rolling(f'{prev_days}D').mean()
-        
+
     df = df.reset_index()
     return df
+
 
 # When it is time to merge and analyze, just call this function.
 def get_cleaned_NOAA_df(prev_days=5):
@@ -143,3 +148,7 @@ def get_cleaned_NOAA_df(prev_days=5):
     numeric_cols = df.select_dtypes(include='number').columns.tolist()
     df = add_avg_prev_columns(df, columns=numeric_cols, prev_days=prev_days)
     return df
+
+test = get_cleaned_NOAA_df()
+
+# print(test.head())
